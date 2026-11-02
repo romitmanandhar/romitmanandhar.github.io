@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bike Mileage Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eceee9;--surface:#fafaf7;--ink:#1b2321;--mute:#5d6762;--line:#d2d6cf;--accent:#0f5c6e;--accent-ink:#fff;--odo-bg:#1d2125;--odo-digit:#f0b429;--danger:#b3372b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12171a;--surface:#1b2226;--ink:#e8ecea;--mute:#9aa6a1;--line:#2e383d;--accent:#58b4c8;--accent-ink:#0c1a1e;--odo-bg:#0a0d0f;--danger:#ef8a7e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12171a;--surface:#1b2226;--ink:#e8ecea;--mute:#9aa6a1;--line:#2e383d;--accent:#58b4c8;--accent-ink:#0c1a1e;--odo-bg:#0a0d0f;--danger:#ef8a7e;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.5 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+h1{font:700 26px/1.1 "Barlow Semi Condensed",Barlow,sans-serif;margin:4px 0 16px}
+.odo{background:var(--odo-bg);border-radius:14px;padding:18px 18px 16px;color:#cfd6d2}
+.odo small{display:block;color:#98a39e;font-size:14px;margin-bottom:8px}
+.digits{display:flex;align-items:baseline;gap:10px}
+.digits b{font:700 56px/1 "Barlow Semi Condensed",Barlow,sans-serif;color:var(--odo-digit);letter-spacing:.02em}
+.digits span{font-size:18px;color:#98a39e}
+.odo .sub{display:flex;gap:20px;margin-top:12px;font-size:14px;color:#98a39e;flex-wrap:wrap}
+.odo .sub strong{color:#e8ecea;font-weight:600}
+nav{display:flex;gap:4px;margin:18px 0 12px;border-bottom:1px solid var(--line)}
+nav button{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:var(--mute);font:600 15px Barlow,sans-serif;padding:10px 4px;cursor:pointer}
+nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav button:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+section[hidden]{display:none}
+label{display:block;font-size:14px;font-weight:500;color:var(--mute);margin:0 0 4px}
+input{width:100%;font:500 17px Barlow,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;font:600 16px Barlow,sans-serif;padding:11px 18px;cursor:pointer;width:100%}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.stop{background:var(--danger);color:#fff}
+.result{margin-top:14px;font-size:15px;color:var(--mute)}
+.result strong{font:700 28px "Barlow Semi Condensed",Barlow,sans-serif;color:var(--ink)}
+.hint{font-size:14px;color:var(--mute);margin:10px 0 0}
+.err{color:var(--danger);font-size:14px;margin:8px 0 0;min-height:1em}
+ul{list-style:none;margin:16px 0 0;padding:0}
+li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:15px}
+li .k{font:700 20px "Barlow Semi Condensed",Barlow,sans-serif}
+li small{display:block;color:var(--mute);font-size:13px}
+li button{background:none;border:0;color:var(--mute);cursor:pointer;font:500 14px Barlow,sans-serif;padding:6px}
+.live{text-align:center;padding:8px 0 14px}
+.live b{font:700 64px/1 "Barlow Semi Condensed",Barlow,sans-serif}
+.live span{font-size:20px;color:var(--mute);margin-left:6px}
+.live p{margin:6px 0 0;color:var(--mute);font-size:15px}
+.empty{color:var(--mute);font-size:15px;margin:14px 0 0}
+.chk{display:flex;gap:8px;align-items:center;font-size:15px;color:var(--ink);margin:0 0 12px}
+.chk input{width:auto}
+h2{font:700 18px "Barlow Semi Condensed",Barlow,sans-serif;margin:20px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<main>
+<h1>Bike mileage</h1>
+
+<div class="odo" aria-live="polite">
+  <small id="avgl">Average mileage</small>
+  <div class="digits"><b id="avg">–</b><span>km/l</span></div>
+  <div class="sub"><div>Total ridden <strong id="tot">0 km</strong></div><div>Fuel used <strong id="fuel">0 l</strong></div></div>
+</div>
+
+<nav role="tablist">
+  <button role="tab" aria-selected="true" data-t="fill">Fill-ups</button>
+  <button role="tab" aria-selected="false" data-t="track">Track a ride</button>
+  <button role="tab" aria-selected="false" data-t="calc">Quick calculator</button>
+  <button role="tab" aria-selected="false" data-t="known">My mileage</button>
+</nav>
+
+<section id="fill">
+  <div class="row">
+    <div><label for="fd">Date</label><input id="fd" type="date"></div>
+    <div><label for="fo">Odometer (km)</label><input id="fo" type="number" inputmode="decimal" min="0" step="0.1"></div>
+  </div>
+  <div style="margin-bottom:12px"><label for="fl">Fuel filled (litres)</label><input id="fl" type="number" inputmode="decimal" min="0" step="0.01"></div>
+  <button class="btn" id="addFill">Save fill-up</button>
+  <p class="err" id="fe"></p>
+  <p class="hint">Fill the tank to full each time. Mileage is the distance since your last fill-up divided by the litres you add now. The first entry sets the starting point.</p>
+  <ul id="fills"></ul>
+</section>
+
+<section id="track" hidden>
+  <div class="live"><b id="td">0.00</b><span>km</span><p id="ts">Ready to start</p></div>
+  <button class="btn" id="go">Start ride</button>
+  <p class="err" id="te"></p>
+  <p class="hint">Keep this page open and the screen on while riding. Browsers may pause GPS when the screen locks. Saved rides count toward your total distance.</p>
+  <ul id="trips"></ul>
+</section>
+
+<section id="calc" hidden>
+  <div class="row">
+    <div><label for="cd">Distance (km)</label><input id="cd" type="number" inputmode="decimal" min="0" step="0.1"></div>
+    <div><label for="cf">Fuel used (litres)</label><input id="cf" type="number" inputmode="decimal" min="0" step="0.01"></div>
+  </div>
+  <button class="btn ghost" id="doCalc">Calculate</button>
+  <div class="result" id="cr">Enter distance and fuel to see mileage.</div>
+</section>
+<section id="known" hidden>
+  <div class="row">
+    <div><label for="km">Your bike’s mileage (km/l)</label><input id="km" type="number" inputmode="decimal" min="0" step="0.1"></div>
+    <div><label for="kp">Fuel price per litre (optional)</label><input id="kp" type="number" inputmode="decimal" min="0" step="0.01"></div>
+  </div>
+  <label class="chk"><input type="checkbox" id="ku" checked> Show this number as my mileage at the top</label>
+  <button class="btn" id="saveMine">Save my mileage</button>
+  <p class="err" id="ke"></p>
+  <h2>Plan a ride</h2>
+  <div class="row">
+    <div><label for="kd">Distance to ride (km)</label><input id="kd" type="number" inputmode="decimal" min="0" step="0.1"></div>
+    <div><label for="kf">Fuel you have (litres)</label><input id="kf" type="number" inputmode="decimal" min="0" step="0.01"></div>
+  </div>
+  <div class="result" id="kr">Enter your mileage above to plan a ride.</div>
+  <p class="hint">If you already know your bike’s mileage, enter it here. Tracked rides will show the estimated fuel used.</p>
+</section>
+</main>
+
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var mem={};
+  function load(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):[]}catch(e){return mem[k]||[]}}
+  function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){mem[k]=v}}
+  var fills=load('bm_fills'),trips=load('bm_trips');
+  var mine=(function(){try{return JSON.parse(localStorage.getItem('bm_mine'))||{}}catch(e){return mem.bm_mine||{}}})();
+  $('fd').value=new Date().toISOString().slice(0,10);
+
+  // tabs
+  document.querySelectorAll('nav button').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('nav button').forEach(function(x){x.setAttribute('aria-selected',x===b)});
+      ['fill','track','calc','known'].forEach(function(id){$(id).hidden=id!==b.dataset.t});
+    });
+  });
+
+  function f1(n){return (Math.round(n*10)/10).toLocaleString()}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+  function render(){
+    fills.sort(function(a,b){return a.odo-b.odo});
+    var km=0,l=0,i;
+    for(i=1;i<fills.length;i++){km+=fills[i].odo-fills[i-1].odo;l+=fills[i].litres}
+    var tripKm=trips.reduce(function(s,t){return s+t.km},0);
+    var calc=l>0?km/l:null,useMine=mine.kmpl>0&&(mine.use!==false||calc===null),eff=useMine?mine.kmpl:calc;
+    $('avg').textContent=eff?eff.toFixed(1):'–';
+    $('avgl').textContent=useMine?'Your mileage (entered by you)':'Average mileage (from fill-ups)';
+    $('tot').textContent=f1(km+tripKm)+' km';
+    $('fuel').textContent=f1(l)+' l';
+    var h='';
+    for(i=fills.length-1;i>=0;i--){
+      var f=fills[i],m=i>0?((f.odo-fills[i-1].odo)/f.litres).toFixed(1)+' km/l':'Starting point';
+      h+='<li><div><span class="k">'+m+'</span><small>'+esc(f.date)+' · '+f1(f.odo)+' km · '+f.litres+' l</small></div><button data-fd="'+i+'" aria-label="Delete fill-up">Delete</button></li>';
+    }
+    $('fills').innerHTML=h||'<p class="empty">No fill-ups yet. Add your first one above.</p>';
+    h='';
+    trips.slice().reverse().forEach(function(t,j){
+      var idx=trips.length-1-j;
+      h+='<li><div><span class="k">'+t.km.toFixed(2)+' km</span><small>'+esc(t.date)+' · '+t.mins+' min'+(mine.kmpl>0?' · about '+(t.km/mine.kmpl).toFixed(2)+' l':'')+'</small></div><button data-td="'+idx+'" aria-label="Delete ride">Delete</button></li>';
+    });
+    $('trips').innerHTML=h;
+  }
+  $('fills').addEventListener('click',function(e){var i=e.target.dataset.fd;if(i!==undefined){fills.splice(+i,1);save('bm_fills',fills);render()}});
+  $('trips').addEventListener('click',function(e){var i=e.target.dataset.td;if(i!==undefined){trips.splice(+i,1);save('bm_trips',trips);render()}});
+
+  $('addFill').addEventListener('click',function(){
+    var o=parseFloat($('fo').value),l=parseFloat($('fl').value),d=$('fd').value,er=$('fe');
+    er.textContent='';
+    if(!d||isNaN(o)||isNaN(l)||l<=0){er.textContent='Enter a date, the odometer reading and litres filled.';return}
+    var prev=fills.filter(function(f){return f.odo<o}).pop();
+    var hasHigher=fills.some(function(f){return f.odo>=o});
+    if(hasHigher){er.textContent='This odometer reading must be higher than your earlier fill-ups.';return}
+    fills.push({date:d,odo:o,litres:l});save('bm_fills',fills);
+    $('fo').value='';$('fl').value='';render();
+  });
+
+  // quick calculator
+  $('doCalc').addEventListener('click',function(){
+    var d=parseFloat($('cd').value),f=parseFloat($('cf').value);
+    if(isNaN(d)||isNaN(f)||d<=0||f<=0){$('cr').textContent='Enter a distance and fuel amount above zero.';return}
+    $('cr').innerHTML='<strong>'+(d/f).toFixed(1)+' km/l</strong><br>'+(f/d*100).toFixed(2)+' litres per 100 km';
+  });
+
+  // GPS tracking
+  var watch=null,dist=0,last=null,t0=0,timer=null,lock=null;
+  function hav(a,b){var R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r;
+    var x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)*Math.sin(dn/2);
+    return 2*R*Math.asin(Math.sqrt(x))}
+  function tick(){var s=Math.floor((Date.now()-t0)/1000);$('ts').textContent='Riding · '+Math.floor(s/60)+' min '+('0'+s%60).slice(-2)+' s'}
+  function stop(){
+    if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;clearInterval(timer);
+    try{if(lock)lock.release()}catch(e){}lock=null;
+    var mins=Math.max(1,Math.round((Date.now()-t0)/60000));
+    if(dist>0.01){trips.push({date:new Date().toISOString().slice(0,10),km:dist,mins:mins});save('bm_trips',trips);$('ts').textContent='Ride saved';}
+    else $('ts').textContent='Ride too short to save';
+    $('go').textContent='Start ride';$('go').classList.remove('stop');render();
+  }
+  $('go').addEventListener('click',function(){
+    $('te').textContent='';
+    if(watch!==null){stop();return}
+    if(!navigator.geolocation){$('te').textContent='This browser does not support GPS. Use the fill-up form instead.';return}
+    dist=0;last=null;t0=Date.now();$('td').textContent='0.00';
+    watch=navigator.geolocation.watchPosition(function(p){
+      if(p.coords.accuracy>40)return;
+      var pt={lat:p.coords.latitude,lon:p.coords.longitude};
+      if(last){var d=hav(last,pt);if(d>=0.005&&d<1){dist+=d;last=pt;$('td').textContent=dist.toFixed(2)}}else last=pt;
+    },function(err){
+      $('te').textContent=err.code===1?'Location access was blocked. Allow location for this page and try again.':'Could not get a GPS signal. Move to an open area and try again.';
+      stop();
+    },{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+    timer=setInterval(tick,1000);tick();
+    $('go').textContent='Stop and save ride';$('go').classList.add('stop');
+    try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(function(l){lock=l}).catch(function(){})}catch(e){}
+  });
+
+  // known mileage
+  $('km').value=mine.kmpl||'';$('kp').value=mine.price||'';$('ku').checked=mine.use!==false;
+  function plan(){
+    var m=parseFloat($('km').value),p=parseFloat($('kp').value),d=parseFloat($('kd').value),f=parseFloat($('kf').value),out=[];
+    if(!(m>0)){$('kr').textContent='Enter your mileage above to plan a ride.';return}
+    if(d>0){var lit=d/m;out.push('<strong>'+lit.toFixed(2)+' l</strong> needed for '+d+' km'+(p>0?' · fuel cost about '+(lit*p).toFixed(0):''))}
+    if(f>0){out.push('<strong>'+(f*m).toFixed(0)+' km</strong> of range on '+f+' l')}
+    $('kr').innerHTML=out.join('<br><br>')||'Enter a distance or an amount of fuel.';
+  }
+  ['km','kp','kd','kf'].forEach(function(id){$(id).addEventListener('input',plan)});
+  $('saveMine').addEventListener('click',function(){
+    var m=parseFloat($('km').value),p=parseFloat($('kp').value);
+    if(!(m>0)){$('ke').textContent='Enter your mileage in km/l, for example 45.';return}
+    mine={kmpl:m,price:p>0?p:0,use:$('ku').checked};save('bm_mine',mine);
+    $('ke').textContent='';$('saveMine').textContent='Saved';
+    setTimeout(function(){$('saveMine').textContent='Save my mileage'},1500);
+    render();plan();
+  });
+  plan();
+  render();
+})();
+</script>
+</body>
+</html>
